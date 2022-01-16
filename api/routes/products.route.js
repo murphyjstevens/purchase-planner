@@ -8,4 +8,8 @@ router.route('/')
   .get(controller.get)
   .post(controller.create);
 
+router.route('/:id')
+  .get(controller.find)
+  .delete(controller.remove);
+
 export default router;
