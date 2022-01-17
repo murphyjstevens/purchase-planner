@@ -14,7 +14,7 @@ app.use(routes)
 
 dotenv.config()
 
-const port = 3000
+const port = process.env.PORT
 const useHttps = false
 
 const httpServer = http.createServer(app)
