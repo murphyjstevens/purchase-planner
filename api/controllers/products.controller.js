@@ -22,7 +22,7 @@ async function find (request, response) {
       response.status(404).end()
       return
     }
-    
+
     response.send(rows[0])
   } catch (error) {
     response.status(500).send(error)
@@ -61,7 +61,7 @@ async function update (request, response) {
     url: request.body.url
   }
 
-  let errors = []
+  const errors = []
 
   if (!product.id || isNaN(product.id) || product.id < 1) {
     errors.push('Id must be a positive integer')
@@ -95,12 +95,12 @@ async function remove (request, response) {
     response.status(400).send('Id must be a positive integer')
     return
   }
-  
+
   try {
     await db.query('DELETE FROM product WHERE id = $1', [id])
     response.end()
   } catch (error) {
-    response.status(500).send(error);
+    response.status(500).send(error)
   }
 }
 
