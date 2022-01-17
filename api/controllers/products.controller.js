@@ -32,7 +32,8 @@ async function find (request, response) {
 async function create (request, response) {
   const product = {
     name: request.body.name,
-    url: request.body.url
+    url: request.body.url,
+    cost: Number(request.body.cost)
   }
 
   if (!product.name) {
@@ -41,10 +42,10 @@ async function create (request, response) {
   }
 
   const query = {
-    text: `INSERT INTO product (name, url, last_modified)
-            VALUES ($1, $2, now() at time zone 'utc')
+    text: `INSERT INTO product (name, url, cost, last_modified)
+            VALUES ($1, $2, $3, now() at time zone 'utc')
             RETURNING *`,
-    values: [product.name, product.url]
+    values: [product.name, product.url, product.cost]
   }
   try {
     const { rows } = await db.query(query)
@@ -58,7 +59,8 @@ async function update (request, response) {
   const product = {
     id: Number(request.body.id),
     name: request.body.name,
-    url: request.body.url
+    url: request.body.url,
+    cost: Number(request.body.cost)
   }
 
   const errors = []
@@ -69,6 +71,9 @@ async function update (request, response) {
   if (!product.name) {
     errors.push('Name is required')
   }
+  if ((!product.cost && product.cost !== 0) || isNaN(product.cost)) {
+    errors.push('Cost is required')
+  }
   if (errors.length) {
     response.status(400).send(errors.join('\n'))
     return
@@ -76,10 +81,10 @@ async function update (request, response) {
 
   const query = {
     text: `UPDATE product
-            SET name = $2, url = $3, last_modified = now() at time zone 'utc'
+            SET name = $2, url = $3, cost = $4, last_modified = now() at time zone 'utc'
             WHERE id = $1
             RETURNING *`,
-    values: [product.id, product.name, product.url]
+    values: [product.id, product.name, product.url, product.cost]
   }
   try {
     const { rows } = await db.query(query)
