@@ -1,28 +1,28 @@
-import cors from 'cors';
-import dotenv from 'dotenv';
-import express from 'express';
-import http from 'http';
-import https from 'https';
+import cors from 'cors'
+import dotenv from 'dotenv'
+import express from 'express'
+import http from 'http'
+import https from 'https'
 
-import routes from './routes/index.route.js';
+import routes from './routes/index.route.js'
 
-const app = express();
+const app = express()
 
-app.use(express.json());
-app.use(cors());
-app.use(routes);
+app.use(express.json())
+app.use(cors())
+app.use(routes)
 
-dotenv.config();
+dotenv.config()
 
-const port = 3000;
-const useHttps = false;
+const port = 3000
+const useHttps = false
 
-const httpServer = http.createServer(app);
-httpServer.listen(port);
-console.log(`HTTP listening on port ${port}`);
+const httpServer = http.createServer(app)
+httpServer.listen(port)
+console.log(`HTTP listening on port ${port}`)
 
 if (useHttps) {
-  const httpsServer = https.createServer(app);
-  httpsServer.listen(port + 1);
-  console.log(`HTTPS listening on port ${port + 1}`);
+  const httpsServer = https.createServer(app)
+  httpsServer.listen(port + 1)
+  console.log(`HTTPS listening on port ${port + 1}`)
 }
