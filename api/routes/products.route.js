@@ -7,6 +7,7 @@ const router = express.Router()
 router.route('/')
   .get(controller.get)
   .post(controller.create)
+  .put(controller.update)
 
 router.route('/:id')
   .get(controller.find)
