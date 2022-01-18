@@ -17,6 +17,8 @@ dotenv.config()
 const port = process.env.PORT
 const useHttps = false
 
+console.log(process.env.PGUSER)
+
 const httpServer = http.createServer(app)
 httpServer.listen(port)
 console.log(`HTTP listening on port ${port}`)

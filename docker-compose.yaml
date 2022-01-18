@@ -10,14 +10,13 @@ services:
       - 'db'
     environment:
       - PORT=5051
+      - PGHOST=db
       - PGUSER=postgres
-      - PGHOST=localhost
       - PGPASSWORD=postgres
+      - PGPORT=5432
       - PGDATABASE=purchase_planner
   db:
-    build:
-      context: ./db
-      dockerfile: Dockerfile
+    build: ./db
     ports:
       - 5432:5432
     environment:

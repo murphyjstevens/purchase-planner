@@ -2,7 +2,7 @@ CREATE DATABASE purchase_planner;
 
 \connect "purchase_planner";
 
-CREATE SEQUENCE product_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 4 CACHE 1;
+CREATE SEQUENCE product_id_seq INCREMENT 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1;
 
 CREATE TABLE "public"."product" (
     "id" integer DEFAULT nextval('product_id_seq') NOT NULL,

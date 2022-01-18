@@ -4,8 +4,9 @@ async function get (request, response) {
   try {
     const { rows } = await db.query('SELECT * FROM product')
     response.send(rows)
-  } catch (e) {
-    response.status(500).send(e)
+  } catch (error) {
+    response.status(500).send(error)
+    console.error(error)
   }
 }
 
@@ -13,6 +14,7 @@ async function find (request, response) {
   const id = Number(request.params.id)
   if (!id || isNaN(id) || id < 1) {
     response.status(400).send('Id must be a positive integer')
+    console.error('Id must be a positive integer')
     return
   }
 
@@ -20,12 +22,14 @@ async function find (request, response) {
     const { rows } = await db.query('SELECT * FROM product WHERE id = $1', [id])
     if (!rows.length) {
       response.status(404).end()
+      console.error('Not found')
       return
     }
 
     response.send(rows[0])
   } catch (error) {
     response.status(500).send(error)
+    console.error(error)
   }
 }
 
@@ -38,6 +42,7 @@ async function create (request, response) {
 
   if (!product.name) {
     response.status(400).send('Name is required')
+    console.error('Name is required')
     return
   }
 
@@ -52,6 +57,7 @@ async function create (request, response) {
     response.send(rows[0])
   } catch (error) {
     response.status(500).send(error)
+    console.error(error)
   }
 }
 
@@ -76,6 +82,7 @@ async function update (request, response) {
   }
   if (errors.length) {
     response.status(400).send(errors.join('\n'))
+    console.error(errors.join('\n'))
     return
   }
 
@@ -91,6 +98,7 @@ async function update (request, response) {
     response.send(rows[0])
   } catch (error) {
     response.status(500).send(error)
+    console.error(error)
   }
 }
 
@@ -106,6 +114,7 @@ async function remove (request, response) {
     response.end()
   } catch (error) {
     response.status(500).send(error)
+    console.error(error)
   }
 }
 
