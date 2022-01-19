@@ -1,19 +1,21 @@
 <template>
   <div class="d-flex justify-content-center mb-3">
     <button type="button"
-      @click="openAddProjectDialog()"
+      @click="openAddProductDialog()"
       class="btn btn-outline-light btn-lg">
       <i class="bi-plus-lg"></i>
-      Add Project
+      Add Product
     </button>
   </div>
 
   <div class="container">
-    <div class="card">
+    <div v-for="product in products"
+          :key="product.id"
+          class="card">
       <div class="card-body">
-        <h4 class="card-title">{{ project.name }}</h4>
-        <h5 class="card-text">{{ convertToCurrency(project.totalCost) }}</h5>
-        <p class="card-text">{{ project.description }}</p>
+        <h4 class="card-title">{{ product.name }}</h4>
+        <h5 class="card-text">{{ convertToCurrency(product.totalCost) }}</h5>
+        <p class="card-text">{{ product.description }}</p>
       </div>
     </div>
   </div>
@@ -35,7 +37,7 @@ export default {
     })
   },
   methods: {
-    openAddProjectDialog () {
+    openAddProductDialog () {
       // if (this.$refs.addModal) {
       //   this.$refs.addModal.open()
       // }
@@ -45,7 +47,7 @@ export default {
     }
   },
   created () {
-    // this.$store.dispatch('projects/get')
+    this.$store.dispatch('products/get')
   }
 }
 </script>

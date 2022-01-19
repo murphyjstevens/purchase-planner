@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const baseUrl = process.env.VUE_APP_ROOT_API
+const baseUrl = process.env.VUE_APP_API_URL
 
 const state = () => ({
   all: [],
@@ -18,22 +18,22 @@ const getters = {
 const actions = {
   async get ({ commit }) {
     try {
-      const response = await axios.get(baseUrl + '/products/calculated')
+      const response = await axios.get(baseUrl + '/products')
       commit('setProducts', response.data)
     } catch (error) {
       console.error(error)
     }
   },
-  async find ({ commit, state }, projectId) {
+  async find ({ commit, state }, productId) {
     try {
-      if (!projectId) {
+      if (!productId) {
         console.error('Empty ProductId')
         return
       }
       if (state.all.length) {
-        commit('setProduct', state.all.find(product => product.id === projectId))
+        commit('setProduct', state.all.find(product => product.id === productId))
       } else {
-        const response = await axios.get(baseUrl + '/products/' + projectId)
+        const response = await axios.get(baseUrl + '/products/' + productId)
         commit('setProduct', response.data)
       }
     } catch (error) {
@@ -97,8 +97,8 @@ const mutations = {
     }
     state.product = product
   },
-  deleteProduct (state, projectId) {
-    state.all = state.all.filter(product => product.id !== projectId)
+  deleteProduct (state, productId) {
+    state.all = state.all.filter(product => product.id !== productId)
   }
 }
 
