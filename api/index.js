@@ -6,18 +6,20 @@ import https from 'https'
 
 import routes from './routes/index.route.js'
 
+dotenv.config()
+
 const app = express()
 
 app.use(express.json())
-app.use(cors())
-app.use(routes)
 
-dotenv.config()
+const origins = process.env.ALLOWED_ORIGINS.split(',')
+const corsOptions = { origin: origins }
+app.use(cors(corsOptions))
+console.log(`Allowed origins: ${origins.join(', ')}`)
+app.use(routes)
 
 const port = process.env.PORT
 const useHttps = false
-
-console.log(process.env.PGUSER)
 
 const httpServer = http.createServer(app)
 httpServer.listen(port)

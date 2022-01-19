@@ -10,6 +10,7 @@ services:
       - 'db'
     environment:
       - PORT=5051
+      - ALLOWED_ORIGINS=web
       - PGHOST=db
       - PGUSER=postgres
       - PGPASSWORD=postgres
