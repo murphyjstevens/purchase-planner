@@ -41,3 +41,13 @@ body {
     text-overflow: ellipsis;
   }
 }
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.flex-column {
+  display: flex;
+  flex-direction: column;
+}

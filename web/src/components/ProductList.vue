@@ -13,23 +13,36 @@
           :key="product.id"
           class="card">
       <div class="card-body">
-        <h4 class="card-title">{{ product.name }}</h4>
-        <h5 class="card-text">{{ convertToCurrency(product.totalCost) }}</h5>
-        <p class="card-text">{{ product.description }}</p>
+        <div class="card-title flex-row">
+          <span>{{ product.name }}</span>
+          <div>
+            <button type="button"
+                    @click="confirmDeleteProduct(product)"
+                    class="btn btn-danger btn-sm">
+              <i class="bi bi-trash-fill"></i>
+            </button>
+          </div>
+        </div>
+        <h5 class="card-text">{{ convertToCurrency(product.cost) }}</h5>
+        <a :href="product.url" class="card-text">{{ product.url }}</a>
       </div>
     </div>
   </div>
 
-  <!-- <AddProduct ref="addModal" /> -->
+  <AddProduct ref="addModal" />
+  <DeleteConfirmation ref="deleteConfirmationModal" />
 </template>
 
 <script>
 import { mapState } from 'vuex'
-// import AddProduct from './AddProduct.vue'
+import AddProduct from './AddProduct.vue'
+import DeleteConfirmation from './shared/DeleteConfirmation.vue'
+
 export default {
   name: 'ProductList',
   components: {
-    // AddProduct
+    AddProduct,
+    DeleteConfirmation
   },
   computed: {
     ...mapState({
@@ -38,12 +51,21 @@ export default {
   },
   methods: {
     openAddProductDialog () {
-      // if (this.$refs.addModal) {
-      //   this.$refs.addModal.open()
-      // }
+      if (this.$refs.addModal) {
+        this.$refs.addModal.open()
+      }
     },
     convertToCurrency (valueToConvert) {
       return this.$filters.toCurrency(valueToConvert)
+    },
+
+    confirmDeleteProduct (product) {
+      if (this.$refs.deleteConfirmationModal && product) {
+        this.$refs.deleteConfirmationModal.open(this.deleteProduct, product.id, product.name)
+      }
+    },
+    async deleteProduct (id) {
+      await this.$store.dispatch('products/delete', id)
     }
   },
   created () {
@@ -57,5 +79,13 @@ export default {
   background-color: white;
   color: inherit;
   text-decoration: none;
+  margin: 15px 0;
+
+  .card-title {
+    justify-content: space-between;
+    align-items: center;
+    font-size: 24px;
+    font-weight: 500;
+  }
 }
 </style>

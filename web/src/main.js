@@ -20,6 +20,10 @@ const app = createApp({
 
 app.config.globalProperties.$filters = filters
 
+app.directive('select-all', el => {
+  el.onfocus = () => el.select()
+})
+
 app.use(store)
 
 app.mount('#app')
