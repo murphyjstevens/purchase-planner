@@ -51,3 +51,10 @@ body {
   display: flex;
   flex-direction: column;
 }
+
+.text-trim {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

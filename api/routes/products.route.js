@@ -13,4 +13,7 @@ router.route('/:id')
   .get(controller.find)
   .delete(controller.remove)
 
+router.route('/reorder')
+  .patch(controller.reorder)
+
 export default router

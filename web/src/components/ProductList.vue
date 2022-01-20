@@ -17,14 +17,29 @@
           <span>{{ product.name }}</span>
           <div>
             <button type="button"
+                    @click="reorder(product, true)"
+                    class="btn btn-secondary btn-sm me-2"
+                    title="Reorder Up"
+                    :disabled="product.sortOrder === 1">
+              <i class="bi bi-arrow-up"></i>
+            </button>
+            <button type="button"
+                    @click="reorder(product, false)"
+                    class="btn btn-secondary btn-sm me-2"
+                    title="Reorder Down"
+                    :disabled="product.sortOrder === products.length">
+              <i class="bi bi-arrow-down"></i>
+            </button>
+            <button type="button"
                     @click="confirmDeleteProduct(product)"
-                    class="btn btn-danger btn-sm">
+                    class="btn btn-danger btn-sm"
+                    title="Delete">
               <i class="bi bi-trash-fill"></i>
             </button>
           </div>
         </div>
         <h5 class="card-text">{{ convertToCurrency(product.cost) }}</h5>
-        <a :href="product.url" class="card-text">{{ product.url }}</a>
+        <a :href="product.url" target="_blank" class="card-text text-trim">{{ product.url }}</a>
       </div>
     </div>
   </div>
@@ -66,6 +81,32 @@ export default {
     },
     async deleteProduct (id) {
       await this.$store.dispatch('products/delete', id)
+    },
+
+    async reorder (product, isUp) {
+      if ((isUp && product.sortOrder === 0) ||
+        (!isUp && product.sortOrder === this.products.reduce((a, b) => a.sortOrder > b.sortOrder ? a : b))) {
+        return
+      }
+      console.log(product)
+      const newOrder = isUp ? product.sortOrder - 1 : product.sortOrder + 1
+      console.log(newOrder)
+      const otherProduct = this.products.find(p => p.sortOrder === newOrder)
+      if (!otherProduct) {
+        console.error('Could not find sort order')
+        return
+      }
+      const reorderRequest = {
+        item1: {
+          id: product.id,
+          sortOrder: newOrder
+        },
+        item2: {
+          id: otherProduct.id,
+          sortOrder: product.sortOrder
+        }
+      }
+      await this.$store.dispatch('products/reorder', reorderRequest)
     }
   },
   created () {

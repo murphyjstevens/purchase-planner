@@ -24,22 +24,6 @@ const actions = {
       console.error(error)
     }
   },
-  async find ({ commit, state }, productId) {
-    try {
-      if (!productId) {
-        console.error('Empty ProductId')
-        return
-      }
-      if (state.all.length) {
-        commit('setProduct', state.all.find(product => product.id === productId))
-      } else {
-        const response = await axios.get(baseUrl + '/products/' + productId)
-        commit('setProduct', response.data)
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  },
   async create ({ commit }, product) {
     try {
       if (!product) {
@@ -64,6 +48,22 @@ const actions = {
       console.error(error)
     }
   },
+  async reorder ({ commit }, request) {
+    try {
+      if (!request.item1 || !request.item2) {
+        console.error('The parameters are invalid')
+        return
+      }
+      commit('setIsLoading', true, { root: true })
+      const response = await axios.patch(baseUrl + '/products/reorder', request)
+      commit('reorderProducts', response.data)
+      commit('setIsLoading', false, { root: true })
+    } catch (error) {
+      commit('setIsLoading', false, { root: true })
+      commit('setToast', { toastMessage: error.message, isError: true }, { root: true })
+      console.error(error)
+    }
+  },
   async delete ({ commit }, projectId) {
     try {
       if (!projectId) {
@@ -80,22 +80,24 @@ const actions = {
 
 const mutations = {
   setProducts (state, products) {
-    state.all = products
-  },
-  setProduct (state, product) {
-    state.product = product
+    state.all = products.sort((a, b) => a.sortOrder - b.sortOrder)
   },
   addProduct (state, product) {
-    state.all.push(product)
+    state.all = [ ...state.all, product ].sort((a, b) => a.sortOrder - b.sortOrder)
   },
   updateProduct (state, product) {
-    if (state.all.length) {
-      const index = state.all.findIndex(p => p.id === product.id)
-      if (index !== -1) {
-        state.all[index] = product
-      }
-    }
-    state.product = product
+    state.all = [
+      ...state.all.filter(c => c.id !== product.id),
+      product
+   ].sort((a, b) => a.sortOrder - b.sortOrder)
+  },
+  reorderProducts (state, response) {
+    const ids = [response.item1.id, response.item2.id]
+    state.all = [
+      ...state.all.filter(product => !ids.includes(product.id)),
+      response.item1,
+      response.item2
+    ].sort((a, b) => a.sortOrder - b.sortOrder)
   },
   deleteProduct (state, productId) {
     state.all = state.all.filter(product => product.id !== productId)
