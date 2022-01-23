@@ -2,7 +2,6 @@
   <input 
     ref="inputRef"
     type="text"
-    :value="formattedValue"
     class="form-control text-right">
 </template>
 
@@ -16,8 +15,8 @@ export default {
     options: Object
   },
   setup (props) {
-    const { formattedValue, inputRef } = useCurrencyInput(props.options)
-    return { inputRef, formattedValue }
+    const { inputRef } = useCurrencyInput(props.options)
+    return { inputRef }
   }
 }
 </script>

@@ -3,7 +3,10 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">Add Project</h5>
+          <h5 class="modal-title" id="exampleModalLabel">
+            <span v-if="!product">Add Product</span>
+            <span v-if="product">Update Product - {{ product.name }}</span>
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -54,7 +57,7 @@
         <div class="modal-footer">
           <button type="button"
             class="btn btn-primary"
-            :disabled="!v$.$dirty || v$.$invalid"
+            :disabled="v$.$invalid"
             @click="save()">Save</button>
           <button type="button"
             class="btn btn-secondary"
@@ -67,6 +70,7 @@
 
 <script>
 import { Modal } from 'bootstrap'
+import { mapState } from 'vuex'
 import useVuelidate from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 
@@ -77,9 +81,16 @@ export default {
   components: {
     CurrencyInput
   },
+  computed: {
+    ...mapState({
+      products: state => state.products.all
+    })
+  },
   data () {
     return {
       modal: undefined,
+      product: null,
+      id: null,
       name: '',
       url: '',
       cost: null
@@ -92,26 +103,50 @@ export default {
     this.modal = new Modal(this.$refs.modal, {})
   },
   methods: {
-    open () {
+    open (product) {
       this.modal.show()
-      this.reset()
+      this.reset(product)
     },
     close () {
       this.modal.hide()
     },
-    reset () {
-      this.name = null
-      this.url = null
-      this.cost = null
+    reset (product) {
+      this.product = product
+      this.id = product ? product.id : null
+      this.name = product ? product.name : null
+      this.url = product ? product.url : null
+      this.cost = product ? this.convertCurrencyToNumber(product.cost) : null
       this.$nextTick(() => {
         this.v$.$reset()
       })
+    },
+    convertCurrencyToNumber (currency) {
+      return Number(currency.replace(/[^0-9.]+/g, ''))
     },
     async save () {
       if (this.v$.invalid) {
         return
       }
-      await this.$store.dispatch('products/create', { name: this.name, url: this.url, cost: this.cost })
+
+      if (this.product) {
+        const request = {
+          id: this.product.id,
+          name: this.name,
+          url: this.url,
+          cost: this.cost,
+          sortOrder: this.product.sortOrder
+        }
+        await this.$store.dispatch('products/update', request)
+      } else {
+        const newSortOrder = this.products.length + 1
+        const request = {
+          name: this.name,
+          url: this.url,
+          cost: this.cost,
+          sortOrder: newSortOrder
+        }
+        await this.$store.dispatch('products/create', request)
+      }
       this.close()
     }
   },

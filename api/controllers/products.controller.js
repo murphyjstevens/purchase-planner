@@ -40,7 +40,8 @@ async function create (request, response) {
   const product = {
     name: request.body.name,
     url: request.body.url,
-    cost: Number(request.body.cost)
+    cost: Number(request.body.cost),
+    sortOrder: Number(request.body.sortOrder)
   }
 
   if (!product.name) {
@@ -50,10 +51,10 @@ async function create (request, response) {
   }
 
   const query = {
-    text: `INSERT INTO product (name, url, cost, last_modified)
-            VALUES ($1, $2, $3, now() at time zone 'utc')
+    text: `INSERT INTO product (name, url, cost, sort_order, last_modified)
+            VALUES ($1, $2, $3, $4, now() at time zone 'utc')
             RETURNING ${RETURN_OBJECT}`,
-    values: [product.name, product.url, product.cost]
+    values: [product.name, product.url, product.cost, product.sortOrder]
   }
   try {
     const { rows } = await db.query(query)

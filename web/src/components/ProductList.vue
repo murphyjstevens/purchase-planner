@@ -17,6 +17,12 @@
           <span>{{ product.name }}</span>
           <div>
             <button type="button"
+                    @click="edit(product)"
+                    class="btn btn-primary btn-sm me-2"
+                    title="Edit">
+              <i class="bi bi-pencil-fill"></i>
+            </button>
+            <button type="button"
                     @click="reorder(product, true)"
                     class="btn btn-secondary btn-sm me-2"
                     title="Reorder Up"
@@ -65,6 +71,11 @@ export default {
     })
   },
   methods: {
+    edit(product) {
+      if (this.$refs.addModal) {
+        this.$refs.addModal.open(product)
+      }
+    },
     openAddProductDialog () {
       if (this.$refs.addModal) {
         this.$refs.addModal.open()
@@ -88,9 +99,7 @@ export default {
         (!isUp && product.sortOrder === this.products.reduce((a, b) => a.sortOrder > b.sortOrder ? a : b))) {
         return
       }
-      console.log(product)
       const newOrder = isUp ? product.sortOrder - 1 : product.sortOrder + 1
-      console.log(newOrder)
       const otherProduct = this.products.find(p => p.sortOrder === newOrder)
       if (!otherProduct) {
         console.error('Could not find sort order')
