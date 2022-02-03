@@ -6,6 +6,12 @@
       <i class="bi-plus-lg"></i>
       Add Product
     </button>
+    <button type="button"
+            @click="toggleShowPurchased()"
+            class="btn btn-outline-light btn-lg"
+            :title="showPurchased ? 'Hide Purchased' : 'Show Purchased'">
+      <i :class="{ 'bi-eye-slash-fill': showPurchased, 'bi-eye-fill': !showPurchased }"></i>
+    </button>
   </div>
 
   <div class="container">
@@ -16,13 +22,17 @@
         <div class="card-title flex-row">
           <span>{{ product.name }}</span>
           <div>
+            <span v-if="product.purchasedDate"
+                  class="subtext me-2">Purchased on {{ new Date(product.purchasedDate).toDateString() }}</span>
             <button type="button"
+                    v-if="!product.purchasedDate"
                     @click="edit(product)"
                     class="btn btn-primary btn-sm me-2"
                     title="Edit">
               <i class="bi bi-pencil-fill"></i>
             </button>
             <button type="button"
+                    v-if="!product.purchasedDate"
                     @click="reorder(product, true)"
                     class="btn btn-secondary btn-sm me-2"
                     title="Reorder Up"
@@ -30,6 +40,7 @@
               <i class="bi bi-arrow-up"></i>
             </button>
             <button type="button"
+                    v-if="!product.purchasedDate"
                     @click="reorder(product, false)"
                     class="btn btn-secondary btn-sm me-2"
                     title="Reorder Down"
@@ -37,6 +48,14 @@
               <i class="bi bi-arrow-down"></i>
             </button>
             <button type="button"
+                    v-if="!product.purchasedDate"
+                    @click="confirmMarkPurchased(product)"
+                    class="btn btn-secondary btn-sm"
+                    title="Show">
+              <i class="bi bi-eye-slash-fill"></i>
+            </button>
+            <button type="button"
+                    v-if="product.purchasedDate"
                     @click="confirmDeleteProduct(product)"
                     class="btn btn-danger btn-sm"
                     title="Delete">
@@ -51,24 +70,32 @@
   </div>
 
   <AddProduct ref="addModal" />
+  <MarkPurchasedModal ref="markPurchasedModal" />
   <DeleteConfirmation ref="deleteConfirmationModal" />
 </template>
 
 <script>
 import { mapState } from 'vuex'
 import AddProduct from './AddProduct.vue'
+import MarkPurchasedModal from './MarkPurchasedModal.vue'
 import DeleteConfirmation from './shared/DeleteConfirmation.vue'
 
 export default {
   name: 'ProductList',
   components: {
     AddProduct,
-    DeleteConfirmation
+    DeleteConfirmation,
+    MarkPurchasedModal
   },
   computed: {
     ...mapState({
       products: state => state.products.all
     })
+  },
+  data () {
+    return {
+      showPurchased: false
+    }
   },
   methods: {
     edit(product) {
@@ -85,6 +112,11 @@ export default {
       return this.$filters.toCurrency(valueToConvert)
     },
 
+    toggleShowPurchased () {
+      this.showPurchased = !this.showPurchased
+      this.$store.dispatch('products/get', this.showPurchased)
+    },
+
     confirmDeleteProduct (product) {
       if (this.$refs.deleteConfirmationModal && product) {
         this.$refs.deleteConfirmationModal.open(this.deleteProduct, product.id, product.name)
@@ -92,6 +124,23 @@ export default {
     },
     async deleteProduct (id) {
       await this.$store.dispatch('products/delete', id)
+    },
+
+    confirmMarkPurchased (product) {
+      if (this.$refs.markPurchasedModal && product?.id) {
+        this.$refs.markPurchasedModal.open(this.markPurchased, product.id, product.name)
+      }
+    },
+
+    async markPurchased (id, date) {
+      if (!id || !date) {
+        return
+      }
+      const request = {
+        id,
+        date
+      }
+      await this.$store.dispatch('products/markPurchased', request)
     },
 
     async reorder (product, isUp) {
@@ -137,5 +186,10 @@ export default {
     font-size: 24px;
     font-weight: 500;
   }
+}
+
+.subtext {
+  font-size: 15px;
+  font-weight: 100;
 }
 </style>

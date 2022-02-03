@@ -15,13 +15,13 @@
               <div class="col-sm-12">
                 <label for="dialog-name" class="form-label">Name</label>
                 <input v-model="name"
-                  type="text"
-                  id="dialog-name"
-                  class="form-control"
-                  :class="{ 'is-invalid': v$.name.$error }"
-                  placeholder="Name"
-                  maxlength="100"
-                  @blur="v$.name.$touch">
+                        type="text"
+                        id="dialog-name"
+                        class="form-control"
+                        :class="{ 'is-invalid': v$.name.$error }"
+                        placeholder="Name"
+                        maxlength="100"
+                        @blur="v$.name.$touch">
                 <div class="input-errors" v-for="error of v$.name.$errors" :key="error.$uid">
                   <div class="error-msg invalid-feedback d-block">{{ error.$message }}</div>
                 </div>
@@ -56,16 +56,22 @@
         </div>
         <div class="modal-footer">
           <button type="button"
-            class="btn btn-primary"
-            :disabled="v$.$invalid"
-            @click="save()">Save</button>
+                  class="btn btn-light"
+                  @click="close()">Close</button>
           <button type="button"
-            class="btn btn-secondary"
-            @click="close()">Close</button>
+                  v-if="product"
+                  class="btn btn-danger"
+                  @click="confirmDeleteProduct(product)">Delete</button>
+          <button type="button"
+                  class="btn btn-primary"
+                  :disabled="v$.$invalid"
+                  @click="save()">Save</button>
         </div>
       </div>
     </div>
   </div>
+
+  <DeleteConfirmation ref="deleteConfirmationModal" />
 </template>
 
 <script>
@@ -75,11 +81,13 @@ import useVuelidate from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 
 import CurrencyInput from './shared/CurrencyInput.vue'
+import DeleteConfirmation from './shared/DeleteConfirmation.vue'
 
 export default {
   name: 'AddProduct',
   components: {
-    CurrencyInput
+    CurrencyInput,
+    DeleteConfirmation
   },
   computed: {
     ...mapState({
@@ -122,6 +130,19 @@ export default {
     },
     convertCurrencyToNumber (currency) {
       return Number(currency.replace(/[^0-9.]+/g, ''))
+    },
+
+    confirmDeleteProduct (product) {
+      if (this.$refs.deleteConfirmationModal && product?.id) {
+        this.$refs.deleteConfirmationModal.open(this.deleteProduct, product.id, product.name)
+      }
+    },
+    async deleteProduct (id) {
+      if (!id) {
+        return
+      }
+      await this.$store.dispatch('products/delete', id)
+      this.close()
     },
     async save () {
       if (this.v$.invalid) {

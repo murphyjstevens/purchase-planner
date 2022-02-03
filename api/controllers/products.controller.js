@@ -1,10 +1,30 @@
 import db from '../db/index.js'
 
-const RETURN_OBJECT = 'id, name, cost, url, sort_order as sortOrder'
+const RETURN_OBJECT = 'id, name, cost, url, sort_order as sortOrder, purchased_date as purchasedDate'
 
 async function get (request, response) {
+  const showPurchased = request.query.showPurchased ? request.query.showPurchased.toLowerCase().trim() === 'true' : false
+  if (showPurchased) {
+    await getPurchased(request, response)
+  } else {
+    await getActive(request, response)
+  }
+}
+
+async function getActive (request, response) {
   try {
-    const { rows } = await db.query(`SELECT ${RETURN_OBJECT} FROM product`)
+    const { rows } = await db.query(`SELECT ${RETURN_OBJECT} FROM product WHERE purchased_date is null`)
+    const result = rows.map(mapProduct)
+    response.send(result)
+  } catch (error) {
+    response.status(500).send(error)
+    console.error(error)
+  }
+}
+
+async function getPurchased (request, response) {
+  try {
+    const { rows } = await db.query(`SELECT ${RETURN_OBJECT} FROM product WHERE purchased_date is not null`)
     const result = rows.map(mapProduct)
     response.send(result)
   } catch (error) {
@@ -105,6 +125,35 @@ async function update (request, response) {
   }
 }
 
+async function markPurchased (request, response) {
+  const id = Number(request.params.id)
+  const date = request.query.date ? new Date(request.query.date) : null
+  if (!id || id.isNaN) {
+    response.status(400).send('The Id must be a positive integer')
+    return
+  }
+  if (!date) {
+    response.status(400).send('There date field is required')
+    return
+  }
+
+  const query = {
+    text: `UPDATE product
+            SET purchased_date = $2, sort_order = null, last_modified = now() at time zone 'utc'
+            WHERE id = $1
+            RETURNING ${RETURN_OBJECT}`,
+    values: [id, date]
+  }
+
+  try {
+    await db.query(query)
+    response.end()
+  } catch (error) {
+    response.status(500).send(error)
+    console.error(error)
+  }
+}
+
 async function reorder (request, response) {
   if (!request.body.item1 || !request.body.item2) {
     response.status(400).send('Both Item1 and Item2 are required')
@@ -165,9 +214,14 @@ async function remove (request, response) {
     response.status(400).send('Id must be a positive integer')
     return
   }
-
+  const query = `DECLARE old_sort_order integer;
+    SELECT INTO old_sort_order sort_order FROM product WHERE id = $1;
+    DELETE FROM product WHERE id = $1;
+    IF old_sort_order is not null THEN 
+      UPDATE product SET sort_order = sort_order - 1 WHERE sort_order > old_sort_order;
+    END IF;`
   try {
-    await db.query('DELETE FROM product WHERE id = $1', [id])
+    await db.query(query, [id])
     response.end()
   } catch (error) {
     response.status(500).send(error)
@@ -176,7 +230,7 @@ async function remove (request, response) {
 }
 
 function mapProduct (product) {
-  return { ...product, sortOrder: product.sortorder }
+  return { ...product, sortOrder: product.sortorder, purchasedDate: product.purchaseddate }
 }
 
-export default { get, find, create, update, reorder, remove }
+export default { get, find, create, update, markPurchased, reorder, remove }

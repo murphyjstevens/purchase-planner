@@ -16,9 +16,9 @@ const getters = {
 }
 
 const actions = {
-  async get ({ commit }) {
+  async get ({ commit }, showPurchased) {
     try {
-      const response = await axios.get(baseUrl + '/products')
+      const response = await axios.get(`${baseUrl}/products`, { params: { showPurchased }})
       commit('setProducts', response.data)
     } catch (error) {
       console.error(error)
@@ -30,7 +30,7 @@ const actions = {
         console.error('Empty Product object')
         return
       }
-      const response = await axios.post(baseUrl + '/products', product)
+      const response = await axios.post(`${baseUrl}/products`, product)
       commit('addProduct', response.data)
     } catch (error) {
       console.error(error)
@@ -45,6 +45,23 @@ const actions = {
       const response = await axios.put(baseUrl + '/products', product)
       commit('updateProduct', response.data)
     } catch (error) {
+      console.error(error)
+    }
+  },
+  async markPurchased ({ commit }, request) {
+    try {
+      if (!request || !request.id || !request.date) {
+        console.error('The parameters are invalid')
+        return
+      }
+
+      commit('setIsLoading', true, { root: true })
+      const response = await axios.patch(`${baseUrl}/products/${request.id}/purchases`, null, { params: { date: request.date } })
+      commit('reorderProducts', response.data)
+      commit('setIsLoading', false, { root: true })
+    } catch (error) {
+      commit('setIsLoading', false, { root: true })
+      commit('setToast', { toastMessage: error.message, isError: true }, { root: true })
       console.error(error)
     }
   },
