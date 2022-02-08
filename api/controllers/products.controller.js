@@ -2,6 +2,7 @@ import db from '../db/index.js'
 
 const RETURN_OBJECT = 'id, name, cost, url, sort_order as sortOrder, purchased_date as purchasedDate'
 
+// Get
 async function get (request, response) {
   const showPurchased = request.query.showPurchased ? request.query.showPurchased.toLowerCase().trim() === 'true' : false
   if (showPurchased) {
@@ -11,6 +12,7 @@ async function get (request, response) {
   }
 }
 
+// Get Active
 async function getActive (request, response) {
   try {
     const { rows } = await db.query(`SELECT ${RETURN_OBJECT} FROM product WHERE purchased_date is null`)
@@ -22,6 +24,7 @@ async function getActive (request, response) {
   }
 }
 
+// Get Purchased
 async function getPurchased (request, response) {
   try {
     const { rows } = await db.query(`SELECT ${RETURN_OBJECT} FROM product WHERE purchased_date is not null`)
@@ -33,6 +36,7 @@ async function getPurchased (request, response) {
   }
 }
 
+// Find
 async function find (request, response) {
   const id = Number(request.params.id)
   if (!id || isNaN(id) || id < 1) {
@@ -56,6 +60,7 @@ async function find (request, response) {
   }
 }
 
+// Create
 async function create (request, response) {
   const product = {
     name: request.body.name,
@@ -85,6 +90,7 @@ async function create (request, response) {
   }
 }
 
+// Update
 async function update (request, response) {
   const product = {
     id: Number(request.body.id),
@@ -125,6 +131,7 @@ async function update (request, response) {
   }
 }
 
+// Mark Purchased
 async function markPurchased (request, response) {
   const id = Number(request.params.id)
   const date = request.query.date ? new Date(request.query.date) : null
@@ -146,7 +153,16 @@ async function markPurchased (request, response) {
   }
 
   try {
+    const sortOrder = await getSortOrder(id)
+    if (sortOrder === undefined) {
+      response.status(404).send('A product was not found with the provided id')
+      return
+    }
+
     await db.query(query)
+    if (sortOrder) {
+      await updateHigherSortOrders(sortOrder)
+    }
     response.end()
   } catch (error) {
     response.status(500).send(error)
@@ -154,6 +170,7 @@ async function markPurchased (request, response) {
   }
 }
 
+// Reorder
 async function reorder (request, response) {
   if (!request.body.item1 || !request.body.item2) {
     response.status(400).send('Both Item1 and Item2 are required')
@@ -195,6 +212,7 @@ async function reorder (request, response) {
   }
 }
 
+// Reorder Item
 async function reorderItem (item) {
   const query = {
     text: `UPDATE product
@@ -208,25 +226,50 @@ async function reorderItem (item) {
   return mapProduct(rows[0])
 }
 
+// Remove
 async function remove (request, response) {
   const id = Number(request.params.id)
   if (!id || isNaN(id) || id < 1) {
     response.status(400).send('Id must be a positive integer')
     return
   }
-  const query = `DECLARE old_sort_order integer;
-    SELECT INTO old_sort_order sort_order FROM product WHERE id = $1;
-    DELETE FROM product WHERE id = $1;
-    IF old_sort_order is not null THEN 
-      UPDATE product SET sort_order = sort_order - 1 WHERE sort_order > old_sort_order;
-    END IF;`
+  const deleteQuery = 'DELETE FROM product WHERE id = $1'
   try {
-    await db.query(query, [id])
+    const sortOrder = await getSortOrder(id)
+    if (sortOrder === undefined) {
+      response.status(404).send('A product was not found with the provided id')
+      return
+    }
+    await db.query(deleteQuery, [id])
+    if (sortOrder) {
+      await updateHigherSortOrders(sortOrder)
+    }
     response.end()
   } catch (error) {
     response.status(500).send(error)
     console.error(error)
   }
+}
+
+// Get Sort Order
+async function getSortOrder (id) {
+  const query = 'SELECT sort_order AS sortorder FROM product WHERE id = $1'
+  const { rows } = await db.query(query, [id])
+  if (rows.length) {
+    return rows[0]?.sortorder
+  } else {
+    return undefined
+  }
+}
+
+// Update Higher Sort Orders
+async function updateHigherSortOrders (sortOrder) {
+  if (!sortOrder) {
+    return
+  }
+
+  const query = 'UPDATE product SET sort_order = sort_order - 1 WHERE sort_order > $1'
+  await db.query(query, [sortOrder])
 }
 
 function mapProduct (product) {
