@@ -19,7 +19,8 @@ const actions = {
   async get ({ commit }, showPurchased) {
     try {
       const response = await axios.get(`${baseUrl}/products`, { params: { showPurchased }})
-      commit('setProducts', response.data)
+
+      commit('setProducts', { products: response.data, showPurchased })
     } catch (error) {
       console.error(error)
     }
@@ -56,8 +57,8 @@ const actions = {
       }
 
       commit('setIsLoading', true, { root: true })
-      const response = await axios.patch(`${baseUrl}/products/${request.id}/purchases`, null, { params: { date: request.date } })
-      commit('reorderProducts', response.data)
+      await axios.patch(`${baseUrl}/products/${request.id}/purchases`, null, { params: { date: request.date } })
+      commit('deleteProduct', request.id)
       commit('setIsLoading', false, { root: true })
     } catch (error) {
       commit('setIsLoading', false, { root: true })
@@ -96,8 +97,12 @@ const actions = {
 }
 
 const mutations = {
-  setProducts (state, products) {
-    state.all = products.sort((a, b) => a.sortOrder - b.sortOrder)
+  setProducts (state, { products, showPurchased }) {
+    if (showPurchased) {
+      state.all = products.sort((a, b) => new Date(b.purchasedDate).getTime() - new Date(a.purchasedDate).getTime())
+    } else {
+      state.all = products.sort((a, b) => a.sortOrder - b.sortOrder)
+    }
   },
   addProduct (state, product) {
     state.all = [ ...state.all, product ].sort((a, b) => a.sortOrder - b.sortOrder)
