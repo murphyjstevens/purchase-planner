@@ -3,9 +3,9 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">
+          <h5 class="modal-title text-trim">
             <span>Confirm Delete</span>
-            <span v-if="name">: {{name}}</span>
+            <span v-if="name" :title="name">: {{name}}</span>
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>

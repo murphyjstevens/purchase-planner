@@ -1,27 +1,28 @@
 <template>
-  <div class="d-flex justify-content-center mb-3">
-    <button type="button"
-      @click="openAddProductDialog()"
-      class="btn btn-outline-light btn-lg">
-      <i class="bi-plus-lg"></i>
-      Add Product
-    </button>
-    <button type="button"
-            @click="toggleShowPurchased()"
-            class="btn btn-outline-light btn-lg"
-            :title="showPurchased ? 'Hide Purchased' : 'Show Purchased'">
-      <i :class="{ 'bi-eye-slash-fill': showPurchased, 'bi-eye-fill': !showPurchased }"></i>
-    </button>
-  </div>
-
   <div class="container">
+    <div class="d-flex justify-content-between mb-3">
+      <button type="button"
+        @click="openAddProductDialog()"
+        class="btn btn-outline-light btn-lg"
+        :disabled="showPurchased">
+        <i class="bi-plus-lg"></i>
+        Add Product
+      </button>
+      <button type="button"
+              @click="toggleShowPurchased()"
+              class="btn btn-outline-light btn-lg"
+              :title="showPurchased ? 'Hide Purchased' : 'Show Purchased'">
+        <i :class="{ 'bi-eye-slash-fill': showPurchased, 'bi-eye-fill': !showPurchased }"></i>
+      </button>
+    </div>
+
     <div v-for="product in products"
           :key="product.id"
           class="card">
       <div class="card-body">
         <div class="card-title flex-row">
-          <span>{{ product.name }}</span>
-          <div>
+          <span class="text-trim" :title="product.name">{{ product.name }}</span>
+          <div class="white-space-nowrap">
             <span v-if="product.purchasedDate"
                   class="subtext me-2">Purchased on {{ new Date(product.purchasedDate).toDateString() }}</span>
             <button type="button"

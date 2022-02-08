@@ -3,9 +3,9 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="exampleModalLabel">
+          <h5 class="modal-title text-trim" id="exampleModalLabel">
             <span v-if="!product">Add Product</span>
-            <span v-if="product">Update Product - {{ product.name }}</span>
+            <span v-if="product" :title="product.name">Update Product - {{ product.name }}</span>
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
@@ -56,7 +56,7 @@
         </div>
         <div class="modal-footer">
           <button type="button"
-                  class="btn btn-light"
+                  class="btn btn-secondary"
                   @click="close()">Close</button>
           <button type="button"
                   v-if="product"
