@@ -13,6 +13,7 @@ import 'bootstrap-icons/font/bootstrap-icons.css'
 
 import './assets/global.scss'
 import './assets/bootstrap-override.css'
+import './registerServiceWorker'
 
 const app = createApp({
   render: () => h(App)
