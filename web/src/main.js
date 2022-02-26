@@ -5,10 +5,8 @@ import store from './store'
 
 import App from './App.vue'
 
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
-
 import 'normalize.css/normalize.css'
-import 'bootstrap/scss/bootstrap.scss'
+import './assets/custom-bootstrap.scss'
 import 'bootstrap-icons/font/bootstrap-icons.css'
 
 import './assets/global.scss'

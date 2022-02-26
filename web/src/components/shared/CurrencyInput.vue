@@ -2,7 +2,7 @@
   <input 
     ref="inputRef"
     type="text"
-    class="form-control text-right">
+    class="form-control text-end">
 </template>
 
 <script>

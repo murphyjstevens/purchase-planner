@@ -43,7 +43,6 @@
                                 v-select-all
                                 id="dialog-cost"
                                 name="cost"
-                                class="form-control"
                                 :class="{ 'is-invalid': v$.cost.$error }"
                                 :options="{ currency: 'USD', precision: 2 }"
                                 @blur="v$.cost.$touch"/>
@@ -75,7 +74,7 @@
 </template>
 
 <script>
-import { Modal } from 'bootstrap'
+import Modal from 'bootstrap/js/dist/modal'
 import { mapState } from 'vuex'
 import useVuelidate from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
@@ -181,7 +180,4 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  textarea {
-    resize: none;
-  }
 </style>

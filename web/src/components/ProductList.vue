@@ -20,7 +20,7 @@
           :key="product.id"
           class="card">
       <div class="card-body">
-        <div class="card-title flex-row">
+        <div class="card-title d-flex flex-row">
           <span class="text-trim" :title="product.name">{{ product.name }}</span>
           <div class="white-space-nowrap">
             <span v-if="product.purchasedDate"
@@ -30,7 +30,7 @@
                     @click="edit(product)"
                     class="btn btn-primary btn-sm me-2"
                     title="Edit">
-              <i class="bi bi-pencil-fill"></i>
+              <i class="bi-pencil-fill"></i>
             </button>
             <button type="button"
                     v-if="!product.purchasedDate"
@@ -38,7 +38,7 @@
                     class="btn btn-secondary btn-sm me-2"
                     title="Reorder Up"
                     :disabled="product.sortOrder === 1">
-              <i class="bi bi-arrow-up"></i>
+              <i class="bi-arrow-up"></i>
             </button>
             <button type="button"
                     v-if="!product.purchasedDate"
@@ -46,26 +46,26 @@
                     class="btn btn-secondary btn-sm me-2"
                     title="Reorder Down"
                     :disabled="product.sortOrder === products.length">
-              <i class="bi bi-arrow-down"></i>
+              <i class="bi-arrow-down"></i>
             </button>
             <button type="button"
                     v-if="!product.purchasedDate"
                     @click="confirmMarkPurchased(product)"
                     class="btn btn-secondary btn-sm"
                     title="Show">
-              <i class="bi bi-eye-slash-fill"></i>
+              <i class="bi-eye-slash-fill"></i>
             </button>
             <button type="button"
                     v-if="product.purchasedDate"
                     @click="confirmDeleteProduct(product)"
                     class="btn btn-danger btn-sm"
                     title="Delete">
-              <i class="bi bi-trash-fill"></i>
+              <i class="bi-trash-fill"></i>
             </button>
           </div>
         </div>
-        <h5 class="card-text">{{ convertToCurrency(product.cost) }}</h5>
-        <a :href="product.url" target="_blank" class="card-text text-trim">{{ product.url }}</a>
+        <h5>{{ convertToCurrency(product.cost) }}</h5>
+        <a :href="product.url" target="_blank" class="text-trim">{{ product.url }}</a>
       </div>
     </div>
   </div>
