@@ -1,13 +1,20 @@
 <template>
   <div class="container">
     <div class="d-flex justify-content-between mb-3">
-      <button type="button"
-        @click="openAddProductDialog()"
-        class="btn btn-outline-light btn-lg"
-        :disabled="showPurchased">
-        <i class="bi-plus-lg"></i>
-        Add Product
-      </button>
+      <div class="dropdown">
+        <button type="button"
+          class="btn btn-outline-light btn-lg dropdown-toggle"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+          :disabled="showPurchased">
+          <i class="bi-plus-lg"></i>
+          Add
+        </button>
+        <ul class="dropdown-menu">
+          <li><a class="dropdown-item" @click="openAddProductDialog()" href="javascript:void(0)">Product</a></li>
+          <li><a class="dropdown-item" @click="openAddGroupDialog()" href="javascript:void(0)">Group</a></li>
+        </ul>
+      </div>
       <button type="button"
               @click="toggleShowPurchased()"
               class="btn btn-outline-light btn-lg"
@@ -27,7 +34,7 @@
                   class="subtext me-2">Purchased on {{ new Date(product.purchasedDate).toDateString() }}</span>
             <button type="button"
                     v-if="!product.purchasedDate"
-                    @click="edit(product)"
+                    @click="editProduct(product)"
                     class="btn btn-primary btn-sm me-2"
                     title="Edit">
               <i class="bi-pencil-fill"></i>
@@ -70,13 +77,16 @@
     </div>
   </div>
 
-  <AddProduct ref="addModal" />
+  <AddGroup ref="addGroupModal" />
+  <AddProduct ref="addProductModal" />
   <MarkPurchasedModal ref="markPurchasedModal" />
   <DeleteConfirmation ref="deleteConfirmationModal" />
 </template>
 
 <script>
+import 'bootstrap/js/dist/dropdown'
 import { mapState } from 'vuex'
+import AddGroup from './AddGroup.vue'
 import AddProduct from './AddProduct.vue'
 import MarkPurchasedModal from './MarkPurchasedModal.vue'
 import DeleteConfirmation from './shared/DeleteConfirmation.vue'
@@ -84,6 +94,7 @@ import DeleteConfirmation from './shared/DeleteConfirmation.vue'
 export default {
   name: 'ProductList',
   components: {
+    AddGroup,
     AddProduct,
     DeleteConfirmation,
     MarkPurchasedModal
@@ -99,14 +110,19 @@ export default {
     }
   },
   methods: {
-    edit(product) {
-      if (this.$refs.addModal) {
-        this.$refs.addModal.open(product)
+    openAddGroupDialog () {
+      if (this.$refs.addGroupModal) {
+        this.$refs.addGroupModal.open()
+      }
+    },
+    editProduct(product) {
+      if (this.$refs.addProductModal) {
+        this.$refs.addProductModal.open(product)
       }
     },
     openAddProductDialog () {
-      if (this.$refs.addModal) {
-        this.$refs.addModal.open()
+      if (this.$refs.addProductModal) {
+        this.$refs.addProductModal.open()
       }
     },
     convertToCurrency (valueToConvert) {
