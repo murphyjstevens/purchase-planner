@@ -1,6 +1,18 @@
 import axios from 'axios'
 
 const baseUrl = process.env.VUE_APP_API_URL
+const useLocalStorage = process.env.VUE_APP_USE_LOCAL_STORAGE === 'true'
+
+function convertProduct(product) {
+  return {
+    ...product,
+    id: product.id ? +product.id : null,
+    cost: product.cost ? +product.cost : null,
+    lastModified: product.lastModified ? new Date(product.lastModified) : null,
+    purchasedDate: product.purchasedDate ? new Date(product.purchasedDate) : null,
+    sortOrder: product.sortOrder ? +product.sortOrder : null
+  }
+}
 
 const state = () => ({
   all: [],
@@ -18,7 +30,14 @@ const getters = {
 const actions = {
   async get ({ commit }, showPurchased) {
     try {
-      const response = await axios.get(`${baseUrl}/products`, { params: { showPurchased }})
+      let response
+      if (useLocalStorage) {
+        let products = JSON.parse(localStorage.getItem('products'))
+        products = products.map(convertProduct).filter(product => !!product.purchasedDate === !!showPurchased)
+        response = { data: products }
+      } else {
+        response = await axios.get(`${baseUrl}/products`, { params: { showPurchased }})
+      }
 
       commit('setProducts', { products: response.data, showPurchased })
     } catch (error) {
@@ -31,7 +50,21 @@ const actions = {
         console.error('Empty Product object')
         return
       }
-      const response = await axios.post(`${baseUrl}/products`, product)
+      let response
+      if (useLocalStorage) {
+        let allProducts = JSON.parse(localStorage.getItem('products'))
+        allProducts = allProducts.map(convertProduct)
+        const newId = allProducts.map(p => p.id).reduce((a, b) => a > b ? a : b) + 1
+
+        product.id = newId
+        product.lastModified = new Date()
+        product.purchasedDate = null
+        const products = [ ...allProducts, product ]
+        localStorage.setItem('products', JSON.stringify(products))
+        response = { data: product }
+      } else {
+        response = await axios.post(`${baseUrl}/products`, product)
+      }
       commit('addProduct', response.data)
     } catch (error) {
       console.error(error)
@@ -43,7 +76,18 @@ const actions = {
         console.error('Empty Product object')
         return
       }
-      const response = await axios.put(baseUrl + '/products', product)
+      let response
+      if (useLocalStorage) {
+        let allProducts = JSON.parse(localStorage.getItem('products'))
+        allProducts = allProducts.map(convertProduct)
+
+        const products = allProducts.filter(p => p.id !== product.id)
+        products.push(product)
+        localStorage.setItem('products', JSON.stringify(products))
+        response = { data: product }
+      } else {
+        response = await axios.put(baseUrl + '/products', product)
+      }
       commit('updateProduct', response.data)
     } catch (error) {
       console.error(error)
@@ -57,7 +101,23 @@ const actions = {
       }
 
       commit('setIsLoading', true, { root: true })
-      await axios.patch(`${baseUrl}/products/${request.id}/purchases`, null, { params: { date: request.date } })
+
+      if (useLocalStorage) {
+        let allProducts = JSON.parse(localStorage.getItem('products'))
+        allProducts = allProducts.map(convertProduct)
+
+        const products = allProducts.filter(p => p.id !== request.id)
+        const updatedProduct = allProducts.find(p => p.id === request.id)
+        if (!updatedProduct) {
+          throw 'Product not found'
+        }
+
+        updatedProduct.purchasedDate = request.date
+        products.push(updatedProduct)
+        localStorage.setItem('products', JSON.stringify(products))
+      } else {
+        await axios.patch(`${baseUrl}/products/${request.id}/purchases`, null, { params: { date: request.date } })
+      }
       commit('deleteProduct', request.id)
       commit('setIsLoading', false, { root: true })
     } catch (error) {
@@ -73,7 +133,29 @@ const actions = {
         return
       }
       commit('setIsLoading', true, { root: true })
-      const response = await axios.patch(baseUrl + '/products/reorder', request)
+      let response
+      if (useLocalStorage) {
+        let allProducts = JSON.parse(localStorage.getItem('products'))
+        allProducts = allProducts.map(convertProduct)
+
+        const products = allProducts.filter(p => p.id !== request.item1.id && p.id !== request.item2.id)
+        const product1 = allProducts.find(p => p.id === request.item1.id)
+        const product2 = allProducts.find(p => p.id === request.item2.id)
+
+        if (!product1 || !product2) {
+          throw 'Products not found'
+        }
+
+        product1.sortOrder = request.item1.sortOrder
+        product2.sortOrder = request.item2.sortOrder
+
+        products.push(product1)
+        products.push(product2)
+        localStorage.setItem('products', JSON.stringify(products))
+        response = { data: { item1: product1, item2: product2 } }
+      } else {
+        response = await axios.patch(baseUrl + '/products/reorder', request)
+      }
       commit('reorderProducts', response.data)
       commit('setIsLoading', false, { root: true })
     } catch (error) {
@@ -82,14 +164,35 @@ const actions = {
       console.error(error)
     }
   },
-  async delete ({ commit }, projectId) {
+  async delete ({ commit }, productId) {
     try {
-      if (!projectId) {
+      if (!productId) {
         console.error('Empty ProductId')
         return
       }
-      await axios.delete(baseUrl + '/products/' + projectId)
-      commit('deleteProduct', projectId)
+
+      if (useLocalStorage) {
+        let allProducts = JSON.parse(localStorage.getItem('products'))
+        allProducts = allProducts.map(convertProduct)
+
+        const deletedProduct = allProducts.find(p => p.id === productId)
+        if (!deletedProduct) {
+          throw 'Deleted product does not exist'
+        }
+
+        allProducts.forEach(product => {
+          if (product.sortOrder > deletedProduct.sortOrder) {
+            product.sortOrder--
+          }
+        })
+
+        const products = allProducts.filter(p => p.id !== productId)
+        localStorage.setItem('products', JSON.stringify(products))
+      } else {
+        await axios.delete(baseUrl + '/products/' + productId)
+      }
+
+      commit('deleteProduct', productId)
     } catch (error) {
       console.error(error)
     }
@@ -122,7 +225,16 @@ const mutations = {
     ].sort((a, b) => a.sortOrder - b.sortOrder)
   },
   deleteProduct (state, productId) {
-    state.all = state.all.filter(product => product.id !== productId)
+    const deletedProduct = state.all.find(p => p.id === productId)
+    const products = state.all
+    if (deletedProduct) {
+      products.forEach(product => {
+        if (product.sortOrder > deletedProduct.sortOrder) {
+          product.sortOrder--
+        }
+      })
+    }
+    state.all = products.filter(product => product.id !== productId)
   }
 }
 

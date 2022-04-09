@@ -128,7 +128,7 @@ export default {
       })
     },
     convertCurrencyToNumber (currency) {
-      return Number(currency.replace(/[^0-9.]+/g, ''))
+      return Number(currency?.toString().replace(/[^0-9.]+/g, ''))
     },
 
     confirmDeleteProduct (product) {
