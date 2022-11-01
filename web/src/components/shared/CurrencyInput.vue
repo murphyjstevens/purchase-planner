@@ -5,27 +5,21 @@
     class="form-control text-end">
 </template>
 
-<script>
+<script setup lang="ts">
 import { watch } from 'vue'
 import { useCurrencyInput } from 'vue-currency-input'
 
-export default {
-  name: 'CurrencyInput',
-  props: {
-    modelValue: Number,
-    options: Object
-  },
-  setup (props) {
-    const { inputRef, setValue } = useCurrencyInput(props.options)
+const props = defineProps<{
+  modelValue: number,
+  options: any
+}>()
 
-    watch(
-      () => props.modelValue,
-      (value) => {
-        setValue(value)
-      }
-    )
+const { inputRef, setValue } = useCurrencyInput(props.options)
 
-    return { inputRef }
-  },
-}
+watch(
+  () => props.modelValue,
+  (value) => {
+    setValue(value)
+  }
+)
 </script>

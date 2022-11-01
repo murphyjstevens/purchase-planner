@@ -1,5 +1,5 @@
 <template>
-  <div class="modal fade" id="exampleModal" ref="modal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+  <div class="modal fade" ref="modalRef" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -13,8 +13,8 @@
           <div class="container-fluid">
             <div class="row gy-3">
               <div class="col-sm-12">
-                <label for="dialog-name" class="form-label">Name</label>
-                <input v-model="name"
+                <label class="form-label">Name</label>
+                <input v-model="state.name"
                         type="text"
                         id="dialog-name"
                         class="form-control"
@@ -49,101 +49,98 @@
   <DeleteConfirmation ref="deleteConfirmationModal" />
 </template>
 
-<script>
-import Modal from 'bootstrap/js/dist/modal'
+<script setup lang="ts">
+import { Modal } from 'bootstrap'
+import { type Ref, ref, computed, type ComputedRef, reactive, onMounted } from 'vue'
+
 import { mapState } from 'vuex'
 import useVuelidate from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 
-import DeleteConfirmation from './shared/DeleteConfirmation.vue'
+import DeleteConfirmation from '@/components/shared/DeleteConfirmation.vue'
 
-export default {
-  name: 'AddGroup',
-  components: {
-    DeleteConfirmation
-  },
-  computed: {
-    ...mapState({
-      groups: state => state.groups.all
-    })
-  },
-  data () {
-    return {
-      modal: undefined,
-      group: null,
-      id: null,
-      name: ''
-    }
-  },
-  setup () {
-    return { v$: useVuelidate() }
-  },
-  mounted () {
-    this.modal = new Modal(this.$refs.modal, {})
-  },
-  methods: {
-    open (group) {
-      this.modal.show()
-      this.reset(group)
-    },
-    close () {
-      this.modal.hide()
-    },
-    reset (group) {
-      this.group = group
-      this.id = group ? group.id : null
-      this.name = group ? group.name : null
-      this.$nextTick(() => {
-        this.v$.$reset()
-      })
-    },
+const modalRef = ref()
+let modal: Modal | null = null
 
-    confirmDelete (group) {
-      if (this.$refs.deleteConfirmationModal && group?.id) {
-        this.$refs.deleteConfirmationModal.open(this.delete, group.id, group.name)
-      }
-    },
-    async delete (id) {
-      if (!id) {
-        return
-      }
-      // await this.$store.dispatch('products/delete', id)
-      this.close()
-    },
-    async save () {
-      if (this.v$.invalid) {
-        return
-      }
+const rules = {
+  name: { required }
+}
 
-      // if (this.product) {
-      //   const request = {
-      //     id: this.product.id,
-      //     name: this.name,
-      //     url: this.url,
-      //     cost: this.cost,
-      //     sortOrder: this.product.sortOrder
-      //   }
-      //   await this.$store.dispatch('products/update', request)
-      // } else {
-      //   const newSortOrder = this.products.length + 1
-      //   const request = {
-      //     name: this.name,
-      //     url: this.url,
-      //     cost: this.cost,
-      //     sortOrder: newSortOrder
-      //   }
-      //   await this.$store.dispatch('products/create', request)
-      // }
-      this.close()
-    }
-  },
-  validations () {
-    return {
-      name: { required }
-    }
+const state = reactive({
+  name: '',
+})
+
+const v$ = useVuelidate(rules, state)
+
+const deleteConfirmationModal = ref()
+
+// const groups: ComputedRef<any> = computed(...mapState({groups: state => state.groups.all}))
+
+const group: Ref<any | undefined> = ref(undefined)
+const id: Ref<number | undefined> = ref(undefined)
+
+defineExpose({
+  open,
+})
+
+onMounted(() => {
+  modal = new Modal(modalRef.value);
+})
+  
+function open() {
+  modal?.show()
+  reset(group)
+}
+
+function close() {
+  modal?.hide()
+}
+
+function reset(newGroup: any) {
+  group.value = newGroup
+  id.value = newGroup ? newGroup.id : undefined
+  state.name = newGroup ? newGroup.name : ''
+}
+
+function confirmDelete(oldGroup: any) {
+  if (deleteConfirmationModal.value && oldGroup?.id) {
+    deleteConfirmationModal.value.open(deleteGroup, oldGroup.id, oldGroup.name)
   }
 }
-</script>
 
-<style scoped lang="scss">
-</style>
+async function deleteGroup(oldId: number): Promise<void> {
+  if (!oldId) {
+    return
+  }
+
+  // await productStore.deleteProduct(oldId)
+  close()
+}
+
+async function save() {
+  if (v$.value.$invalid) {
+    return
+  }
+
+  // if (this.product) {
+  //   const request = {
+  //     id: this.product.id,
+  //     name: this.name,
+  //     url: this.url,
+  //     cost: this.cost,
+  //     sortOrder: this.product.sortOrder
+  //   }
+  //   await this.$store.dispatch('products/update', request)
+  // } else {
+  //   const newSortOrder = this.products.length + 1
+  //   const request = {
+  //     name: this.name,
+  //     url: this.url,
+  //     cost: this.cost,
+  //     sortOrder: newSortOrder
+  //   }
+  //   await this.$store.dispatch('products/create', request)
+  // }
+  close()
+}
+</script>

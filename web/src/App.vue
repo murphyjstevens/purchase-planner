@@ -6,22 +6,13 @@
   </div>
 </template>
 
-<script>
-import ProductList from './components/ProductList.vue'
-
-export default {
-  name: 'App',
-  components: {
-    ProductList
-  }
-}
+<script setup lang="ts">
+import ProductList from '@/components/ProductList.vue'
 </script>
 
-<style scoped lang="scss">
-  .app-content {
-    .content {
-      padding: 10px;
-      width: 800px;
-    }
+<style scoped>
+  .content {
+    padding: 10px;
+    width: 800px;
   }
 </style>

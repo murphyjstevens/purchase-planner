@@ -1,5 +1,5 @@
 <template>
-  <div class="modal fade" ref="modal" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" ref="modalRef" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -12,8 +12,8 @@
         <div class="modal-body">
 
           <div class="col-sm-12">
-            <label for="date" class="form-label">Date Purchased</label>
-            <input v-model="date"
+            <label class="form-label">Date Purchased</label>
+            <input v-model="state.date"
                     type="date"
                     id="date"
                     class="form-control"
@@ -38,52 +38,84 @@
   </div>
 </template>
 
-<script>
-import Modal from 'bootstrap/js/dist/modal'
+<script setup lang="ts">
+import { type Ref, ref, nextTick, reactive, onMounted } from 'vue';
+import { Modal } from 'bootstrap'
 import useVuelidate from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
-export default {
-  name: 'MarkPurchasedModal',
-  data () {
-    return {
-      callback: null,
-      id: null,
-      name: null,
-      date: null
-    }
-  },
-  methods: {
-    open (callback, id, name) {
-      this.modal.show()
-      this.callback = callback
-      this.id = id
-      this.name = name
-      this.date = this.$filters.toShortDate(new Date(), 'yyyy-MM-dd')
-      this.$nextTick(() => {
-        this.v$.$reset()
-      })
-    },
-    close () {
-      this.modal.hide()
-    },
-    callAction () {
-      this.callback(this.id, this.date)
-      this.close()
-    }
-  },
-  mounted () {
-    this.modal = new Modal(this.$refs.modal, {})
-  },
-  setup () {
-    return { v$: useVuelidate() }
-  },
-  validations () {
-    return {
-      date: { required }
-    }
+
+const modalRef = ref()
+let modal: Modal | null = null
+
+const state = reactive({
+  date: toShortDate(new Date(), 'yyyy-MM-dd')
+})
+
+const rules = {
+  date: { required }
+}
+
+const v$ = useVuelidate(rules, state)
+
+let callback: undefined | ((id: number, date: string) => Promise<void>) = undefined
+const id: Ref<number | undefined> = ref(undefined)
+const name: Ref<string | undefined> = ref(undefined)
+
+defineExpose({
+  open,
+})
+
+onMounted(() => {
+  modal = new Modal(modalRef.value);
+})
+
+function open(cb: (id: number, date: string) => Promise<void>, newId: number, newName: string) {
+  modal?.show()
+  callback = cb
+  id.value = newId
+  name.value = newName
+  state.date = toShortDate(new Date(), 'yyyy-MM-dd')
+  nextTick(() => {
+    v$.value.$reset()
+  })
+}
+
+function close() {
+  modal?.hide()
+}
+
+function callAction() {
+  if (callback && id.value) {
+    callback(id.value, state.date)
+    close()
   }
 }
-</script>
 
-<style scoped lang="scss">
-</style>
+function toShortDate(toConvertDate: Date, format: string): string {
+  if (!(toConvertDate instanceof Date) || !format) {
+      return ''
+    }
+
+    const monthString = padZeros(toConvertDate.getMonth()+1, 2)
+    const dayString = padZeros(toConvertDate.getDate(), 2)
+    const yearString = padZeros(toConvertDate.getFullYear(), 4)
+
+    let result = format 
+    result = result.replace('MM', monthString)
+    result = result.replace('dd', dayString)
+    result = result.replace('yyyy', yearString)
+    return result
+}
+
+function padZeros (value: number, numberOfDigits: number): string {
+  if (value === null || value === undefined || isNaN(value) || !numberOfDigits) return ''
+
+  const valueString = value.toString()
+  const characterCount = valueString.length
+
+  if (numberOfDigits < characterCount) return ''
+  const zeroString = '0'.repeat(numberOfDigits - characterCount)
+
+  return zeroString + valueString
+}
+</script>

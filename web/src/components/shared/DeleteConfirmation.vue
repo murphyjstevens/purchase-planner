@@ -1,5 +1,5 @@
 <template>
-  <div class="modal fade" ref="modal" tabindex="-1" aria-hidden="true">
+  <div class="modal fade" ref="modalRef" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -25,37 +25,40 @@
   </div>
 </template>
 
-<script>
-import Modal from 'bootstrap/js/dist/modal'
-export default {
-  name: 'DeleteConfirmation',
-  data () {
-    return {
-      deleteCallback: null,
-      id: null,
-      name: null
-    }
-  },
-  methods: {
-    open (deleteCallback, id, name) {
-      this.modal.show()
-      this.deleteCallback = deleteCallback
-      this.id = id
-      this.name = name
-    },
-    close () {
-      this.modal.hide()
-    },
-    callDelete () {
-      this.deleteCallback(this.id)
-      this.close()
-    }
-  },
-  mounted () {
-    this.modal = new Modal(this.$refs.modal, {})
+<script setup lang="ts">
+import { Modal } from 'bootstrap'
+import { type Ref, ref, onMounted } from 'vue';
+
+const modalRef = ref()
+let modal: Modal | null = null;
+
+let callback: undefined | ((id: number) => void) = undefined
+const id: Ref<number | undefined> = ref(undefined)
+const name: Ref<string | undefined> = ref(undefined)
+
+defineExpose({
+  open,
+})
+
+onMounted(() => {
+  modal = new Modal(modalRef.value);
+})
+
+function open(deleteCallback: (id: number) => void, newId: number, newName: string) {
+  modal?.show()
+  callback = deleteCallback
+  id.value = newId
+  name.value = newName
+}
+
+function close(): void {
+  modal?.hide()
+}
+
+function callDelete(): void {
+  if (callback && id.value) {
+    callback(id.value)
+    close()
   }
 }
 </script>
-
-<style scoped lang="scss">
-</style>

@@ -3,17 +3,13 @@
     <div class="d-flex justify-content-between mb-3">
       <div class="dropdown">
         <button type="button"
-          class="btn btn-outline-light btn-lg dropdown-toggle"
-          data-bs-toggle="dropdown"
+          class="btn btn-outline-light btn-lg"
           aria-expanded="false"
+          @click="openAddProductDialog()"
           :disabled="showPurchased">
           <i class="bi-plus-lg"></i>
           Add
         </button>
-        <ul class="dropdown-menu">
-          <li><a class="dropdown-item" @click="openAddProductDialog()" href="javascript:void(0)">Product</a></li>
-          <li><a class="dropdown-item" @click="openAddGroupDialog()" href="javascript:void(0)">Group</a></li>
-        </ul>
       </div>
       <button type="button"
               @click="toggleShowPurchased()"
@@ -77,132 +73,126 @@
     </div>
   </div>
 
-  <AddGroup ref="addGroupModal" />
   <AddProduct ref="addProductModal" />
   <MarkPurchasedModal ref="markPurchasedModal" />
   <DeleteConfirmation ref="deleteConfirmationModal" />
 </template>
 
-<script>
-import 'bootstrap/js/dist/dropdown'
-import { mapState } from 'vuex'
-import AddGroup from './AddGroup.vue'
+<script setup lang="ts">
+import { type Ref, ref, type ComputedRef, computed, onMounted } from 'vue'
+
+import { useProductStore } from '@/store/product'
 import AddProduct from './AddProduct.vue'
 import MarkPurchasedModal from './MarkPurchasedModal.vue'
 import DeleteConfirmation from './shared/DeleteConfirmation.vue'
+import type Product from '@/models/product'
 
-export default {
-  name: 'ProductList',
-  components: {
-    AddGroup,
-    AddProduct,
-    DeleteConfirmation,
-    MarkPurchasedModal
-  },
-  computed: {
-    ...mapState({
-      products: state => state.products.all
-    })
-  },
-  data () {
-    return {
-      showPurchased: false
-    }
-  },
-  methods: {
-    openAddGroupDialog () {
-      if (this.$refs.addGroupModal) {
-        this.$refs.addGroupModal.open()
-      }
-    },
-    editProduct(product) {
-      if (this.$refs.addProductModal) {
-        this.$refs.addProductModal.open(product)
-      }
-    },
-    openAddProductDialog () {
-      if (this.$refs.addProductModal) {
-        this.$refs.addProductModal.open()
-      }
-    },
-    convertToCurrency (valueToConvert) {
-      return this.$filters.toCurrency(valueToConvert)
-    },
+const productStore = useProductStore()
 
-    toggleShowPurchased () {
-      this.showPurchased = !this.showPurchased
-      this.$store.dispatch('products/get', this.showPurchased)
-    },
+const addProductModal = ref()
+const markPurchasedModal = ref()
+const deleteConfirmationModal = ref()
 
-    confirmDeleteProduct (product) {
-      if (this.$refs.deleteConfirmationModal && product) {
-        this.$refs.deleteConfirmationModal.open(this.deleteProduct, product.id, product.name)
-      }
-    },
-    async deleteProduct (id) {
-      await this.$store.dispatch('products/delete', id)
-    },
+const showPurchased: Ref<boolean> = ref(false)
 
-    confirmMarkPurchased (product) {
-      if (this.$refs.markPurchasedModal && product?.id) {
-        this.$refs.markPurchasedModal.open(this.markPurchased, product.id, product.name)
-      }
-    },
+const products: ComputedRef<any> = computed(() => productStore.all)
 
-    async markPurchased (id, date) {
-      if (!id || !date) {
-        return
-      }
-      const request = {
-        id,
-        date
-      }
-      await this.$store.dispatch('products/markPurchased', request)
-    },
+onMounted(() => {
+  productStore.get(false)
+})
 
-    async reorder (product, isUp) {
-      if ((isUp && product.sortOrder === 0) ||
-        (!isUp && product.sortOrder === this.products.reduce((a, b) => a.sortOrder > b.sortOrder ? a : b))) {
-        return
-      }
-      const newOrder = isUp ? product.sortOrder - 1 : product.sortOrder + 1
-      const otherProduct = this.products.find(p => p.sortOrder === newOrder)
-      if (!otherProduct) {
-        console.error('Could not find sort order')
-        return
-      }
-      const reorderRequest = {
-        item1: {
-          id: product.id,
-          sortOrder: newOrder
-        },
-        item2: {
-          id: otherProduct.id,
-          sortOrder: product.sortOrder
-        }
-      }
-      await this.$store.dispatch('products/reorder', reorderRequest)
-    }
-  },
-  created () {
-    this.$store.dispatch('products/get')
+function editProduct(product: Product) {
+  if (addProductModal.value) {
+    addProductModal.value.open(product)
   }
 }
+
+function openAddProductDialog() {
+  if (addProductModal.value) {
+    addProductModal.value.open()
+  }
+}
+
+function convertToCurrency (valueToConvert: number) {
+  if (typeof valueToConvert !== 'number') {
+    return valueToConvert
+  }
+  var formatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2
+  })
+  return formatter.format(valueToConvert)
+}
+
+function toggleShowPurchased() {
+  showPurchased.value = !showPurchased.value
+  productStore.get(showPurchased.value)
+}
+
+function confirmDeleteProduct(product: Product) {
+  if (deleteConfirmationModal.value && product) {
+    deleteConfirmationModal.value.open(deleteProduct, product.id, product.name)
+  }
+}
+
+async function deleteProduct(id: number) {
+  productStore.deleteProduct(id)
+}
+
+function confirmMarkPurchased(product: Product) {
+  if (markPurchasedModal.value && product?.id) {
+    markPurchasedModal.value.open(markPurchased, product.id, product.name)
+  }
+}
+
+async function markPurchased(id: number, date: string): Promise<void> {
+  if (!id || !date) {
+    return
+  }
+  const request = { id, date }
+  await productStore.markPurchased(request)
+}
+
+async function reorder(product: Product, isUp: boolean) {
+  if ((isUp && product.sortOrder === 0) ||
+      (!isUp && product.sortOrder === products.value.reduce((a: Product, b: Product) => a.sortOrder > b.sortOrder ? a : b))) {
+      return
+    }
+  const newOrder = isUp ? product.sortOrder - 1 : product.sortOrder + 1
+  const otherProduct = products.value.find((p: Product) => p.sortOrder === newOrder)
+  if (!otherProduct) {
+    console.error('Could not find sort order')
+    return
+  }
+  const reorderRequest = {
+    item1: {
+      id: product.id,
+      sortOrder: newOrder
+    },
+    item2: {
+      id: otherProduct.id,
+      sortOrder: product.sortOrder
+    }
+  }
+  await productStore.reorder(reorderRequest)
+}
+
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .card {
   background-color: white;
   color: inherit;
   text-decoration: none;
   margin: 15px 0;
+}
 
-  .card-title {
-    justify-content: space-between;
-    align-items: center;
-    font-size: 24px;
-    font-weight: 500;
-  }
+.card-title {
+  justify-content: space-between;
+  align-items: center;
+  font-size: 24px;
+  font-weight: 500;
 }
 
 .subtext {

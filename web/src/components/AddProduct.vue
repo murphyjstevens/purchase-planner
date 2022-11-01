@@ -1,5 +1,5 @@
 <template>
-  <div class="modal fade" id="exampleModal" ref="modal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal fade" id="exampleModal" ref="modalRef" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -13,8 +13,8 @@
           <div class="container-fluid">
             <div class="row gy-3">
               <div class="col-sm-12">
-                <label for="dialog-name" class="form-label">Name</label>
-                <input v-model="name"
+                <label class="form-label">Name</label>
+                <input v-model="state.name"
                         type="text"
                         id="dialog-name"
                         class="form-control"
@@ -28,8 +28,8 @@
               </div>
 
               <div class="col-sm-12">
-                <label for="dialog-url" class="form-label">URL</label>
-                <input v-model="url"
+                <label class="form-label">URL</label>
+                <input v-model="state.url"
                   type="text"
                   id="dialog-url"
                   class="form-control"
@@ -38,8 +38,8 @@
               </div>
 
               <div class="col-sm-12">
-                <label for="dialog-cost" class="form-label">Cost</label>
-                <CurrencyInput v-model.number="cost"
+                <label class="form-label">Cost</label>
+                <CurrencyInput v-model.number="state.cost"
                                 v-select-all
                                 id="dialog-cost"
                                 name="cost"
@@ -73,111 +73,114 @@
   <DeleteConfirmation ref="deleteConfirmationModal" />
 </template>
 
-<script>
-import Modal from 'bootstrap/js/dist/modal'
-import { mapState } from 'vuex'
+<script setup lang="ts">
+import { Modal } from 'bootstrap'
+import { type Ref, ref, computed, type ComputedRef, reactive, onMounted, nextTick } from 'vue'
+
 import useVuelidate from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 
-import CurrencyInput from './shared/CurrencyInput.vue'
-import DeleteConfirmation from './shared/DeleteConfirmation.vue'
+import { useProductStore } from '@/store/product'
 
-export default {
-  name: 'AddProduct',
-  components: {
-    CurrencyInput,
-    DeleteConfirmation
-  },
-  computed: {
-    ...mapState({
-      products: state => state.products.all
-    })
-  },
-  data () {
-    return {
-      modal: undefined,
-      product: null,
-      id: null,
-      name: '',
-      url: '',
-      cost: null
-    }
-  },
-  setup () {
-    return { v$: useVuelidate() }
-  },
-  mounted () {
-    this.modal = new Modal(this.$refs.modal, {})
-  },
-  methods: {
-    open (product) {
-      this.modal.show()
-      this.reset(product)
-    },
-    close () {
-      this.modal.hide()
-    },
-    reset (product) {
-      this.product = product
-      this.id = product ? product.id : null
-      this.name = product ? product.name : null
-      this.url = product ? product.url : null
-      this.cost = product ? this.convertCurrencyToNumber(product.cost) : null
-      this.$nextTick(() => {
-        this.v$.$reset()
-      })
-    },
-    convertCurrencyToNumber (currency) {
-      return Number(currency?.toString().replace(/[^0-9.]+/g, ''))
-    },
+import CurrencyInput from '@/components/shared/CurrencyInput.vue'
+import DeleteConfirmation from '@/components/shared/DeleteConfirmation.vue'
+import type { Product } from '@/models'
 
-    confirmDeleteProduct (product) {
-      if (this.$refs.deleteConfirmationModal && product?.id) {
-        this.$refs.deleteConfirmationModal.open(this.deleteProduct, product.id, product.name)
-      }
-    },
-    async deleteProduct (id) {
-      if (!id) {
-        return
-      }
-      await this.$store.dispatch('products/delete', id)
-      this.close()
-    },
-    async save () {
-      if (this.v$.invalid) {
-        return
-      }
+const modalRef = ref()
+let modal: Modal | null = null
 
-      if (this.product) {
-        const request = {
-          id: this.product.id,
-          name: this.name,
-          url: this.url,
-          cost: this.cost,
-          sortOrder: this.product.sortOrder
-        }
-        await this.$store.dispatch('products/update', request)
-      } else {
-        const newSortOrder = this.products.length + 1
-        const request = {
-          name: this.name,
-          url: this.url,
-          cost: this.cost,
-          sortOrder: newSortOrder
-        }
-        await this.$store.dispatch('products/create', request)
-      }
-      this.close()
-    }
-  },
-  validations () {
-    return {
-      name: { required },
-      cost: { required }
-    }
+const productStore = useProductStore()
+
+const products: ComputedRef<Array<any>> = computed(() => productStore.all)
+
+const rules = {
+  name: { required },
+  cost: { required },
+}
+
+const state = reactive({
+  name: '',
+  url: '',
+  cost: 0.00,
+})
+
+const v$ = useVuelidate(rules, state)
+
+const deleteConfirmationModal = ref()
+
+const product: Ref<any | undefined> = ref(undefined)
+const id: Ref<number | undefined> = ref(undefined)
+
+defineExpose({
+  open,
+})
+
+onMounted(() => {
+  modal = new Modal(modalRef.value);
+})
+
+function open(newProduct: any) {
+  modal?.show()
+  reset(newProduct)
+}
+
+function close() {
+  modal?.hide()
+}
+
+function reset(newProduct: any) {
+  product.value = newProduct
+  id.value = newProduct ? newProduct.id : undefined
+  state.name = newProduct ? newProduct.name : ''
+  state.url = newProduct ? newProduct.url : ''
+  state.cost = newProduct ? convertCurrencyToNumber(newProduct.cost) : 0.00
+  nextTick(() => {
+    v$.value.$reset()
+  })
+}
+
+function convertCurrencyToNumber (currency: number): number {
+  return Number(currency?.toString().replace(/[^0-9.]+/g, ''))
+}
+
+function confirmDeleteProduct(oldProduct: any) {
+  if (deleteConfirmationModal.value && oldProduct?.id) {
+    deleteConfirmationModal.value.open(deleteProduct, oldProduct.id, oldProduct.name)
   }
 }
-</script>
 
-<style scoped lang="scss">
-</style>
+async function deleteProduct(oldId: number): Promise<void> {
+  if(!oldId) {
+    return
+  }
+  await productStore.deleteProduct(oldId)
+  close()
+}
+
+async function save () {
+  if (v$.value.$invalid) {
+    return
+  }
+
+  if (product.value) {
+    const request: Product = {
+      id: product.value.id,
+      name: state.name,
+      url: state.url,
+      cost: state.cost,
+      sortOrder: product.value.sortOrder
+    } as Product;
+    await productStore.update(request)
+  } else {
+    const newSortOrder = products.value.length + 1
+    const request: Product = {
+      name: state.name,
+      url: state.url,
+      cost: state.cost,
+      sortOrder: newSortOrder
+    } as Product;
+    await productStore.create(request)
+  }
+  close()
+}
+</script>
